@@ -1,0 +1,18 @@
+<resources>
+
+    <string name="action_search">Search</string>
+    <string name="app_name">Phoenix</string>
+    <string name="action_settings">Settings</string>
+    <!--item list edit dialog-->
+    <string name="item_list_edit">Edit</string>
+    <string name="item_list_edit_content">Please input your new item name</string>
+    <string name="item_list_edit_input_hint">Item name...</string>
+    <string name="submit">Submit</string>
+    <!--Item List Page-->
+    <string name="show_floating">Show floatingBtn</string>
+    <string name="hide_floating">Hide floatingBtn</string>
+    <string name="menu_icon">Menu icon</string>
+    <string name="child_icon">Child icon</string>
+
+    <string name="color_palette">Color</string>
+</resources>
