@@ -31,8 +31,8 @@ public class HomePageActivity extends AppCompatActivity {
         /**
          * @see  LoginActivity
          * */
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
+//        Intent intent = new Intent(this, LoginActivity.class);
+//        startActivity(intent);
 
         FloatingActionButton ItemListBtn = (FloatingActionButton) findViewById(R.id.item_list_page_button);
         assert ItemListBtn != null;
