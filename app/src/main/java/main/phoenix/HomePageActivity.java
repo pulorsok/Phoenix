@@ -42,9 +42,9 @@ public class HomePageActivity extends AppCompatActivity {
         ItemListBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-                Fragment listPage = new ListPage();
-                ft.replace(R.id.fragment,listPage).commit();
+                Intent intent = new Intent();
+                intent.setClass(HomePageActivity.this,ListPage.class);
+                startActivity(intent);
             }
         });
 

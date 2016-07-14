@@ -26,7 +26,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity
+            android:name="listPage.ListPage"
+            android:windowSoftInputMode="adjustResize|stateHidden"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
 
         <activity android:name="login.page.LoginActivity" android:theme="@style/AppTheme.Dark" />
         <activity android:name="login.page.SignupActivity" android:theme="@style/AppTheme.Dark" />

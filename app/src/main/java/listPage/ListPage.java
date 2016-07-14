@@ -51,10 +51,9 @@ import java.util.List;
 import java.util.Locale;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
-import main.phoenix.HomePageActivity;
 import main.phoenix.R;
 
-public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefreshListener, ColorChooserDialog.ColorCallback {
+public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPullRefreshListener, ColorChooserDialog.ColorCallback {
     private static final int[] ITEM_DRAWABLES = { R.drawable.composer_camera, R.drawable.composer_music,
             R.drawable.composer_place, R.drawable.composer_sleep, R.drawable.composer_thought, R.drawable.composer_with };
 
@@ -75,34 +74,31 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
     NotificationManager notificationManager;
     Notification notification ;
 
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.list_page_main,container,false);
-    }
 
-    @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         initDataSet();
+        setContentView(R.layout.list_page_main);
+
+
         soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION); // 通知音效的URI，在這裡使用系統內建的通知音效
-        notificationManager = (NotificationManager) getActivity().getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
-        notification = new Notification.Builder(getActivity().getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(soundUri).build(); // 建立通知
+        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
+        notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(soundUri).build(); // 建立通知
         notification.defaults=Notification.DEFAULT_ALL;
 
-//        Toolbar toolbar = (Toolbar) view.findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
-//        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setDisplayShowTitleEnabled(false);
 
-        mFlylayout = (FlyRefreshLayout) view.findViewById(R.id.fly_layout);
+        mFlylayout = (FlyRefreshLayout) findViewById(R.id.fly_layout);
 
         mFlylayout.setOnPullRefreshListener(this);
 
-        mListView = (RecyclerView) view.findViewById(R.id.list);
+        mListView = (RecyclerView) findViewById(R.id.list);
 
-        mLayoutManager = new LinearLayoutManager(getContext());
+        mLayoutManager = new LinearLayoutManager(this);
         mListView.setLayoutManager(mLayoutManager);
-        mAdapter = new ItemAdapter(getContext());
+        mAdapter = new ItemAdapter(this);
 
 
         mListView.setAdapter(mAdapter);
@@ -110,7 +106,7 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
         mListView.setItemAnimator(new SampleItemAnimator());
 
 
-        RayMenu ItemListMenu = (RayMenu)view.findViewById(R.id.item_list_menu);
+        RayMenu ItemListMenu = (RayMenu)findViewById(R.id.item_list_menu);
         initRayMenu(ItemListMenu ,ITEM_DRAWABLES);
         ItemListMenu.getRayLayout().setChildSize(125);
 
@@ -125,53 +121,6 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
             });
         }
     }
-
-//    public void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        initDataSet();
-//        setContentView(R.layout.list_page_main);
-//
-//
-//        soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION); // 通知音效的URI，在這裡使用系統內建的通知音效
-//        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
-//        notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(soundUri).build(); // 建立通知
-//        notification.defaults=Notification.DEFAULT_ALL;
-//
-//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-//        setSupportActionBar(toolbar);
-//        getSupportActionBar().setDisplayShowTitleEnabled(false);
-//
-//        mFlylayout = (FlyRefreshLayout) findViewById(R.id.fly_layout);
-//
-//        mFlylayout.setOnPullRefreshListener(this);
-//
-//        mListView = (RecyclerView) findViewById(R.id.list);
-//
-//        mLayoutManager = new LinearLayoutManager(this);
-//        mListView.setLayoutManager(mLayoutManager);
-//        mAdapter = new ItemAdapter(this);
-//
-//
-//        mListView.setAdapter(mAdapter);
-//
-//        mListView.setItemAnimator(new SampleItemAnimator());
-//
-//
-//        RayMenu ItemListMenu = (RayMenu)findViewById(R.id.item_list_menu);
-//        initRayMenu(ItemListMenu ,ITEM_DRAWABLES);
-//        ItemListMenu.getRayLayout().setChildSize(125);
-//
-//
-//        View actionButton = mFlylayout.getHeaderActionButton();
-//        if (actionButton != null) {
-//            actionButton.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    mFlylayout.startRefresh();
-//                }
-//            });
-//        }
-//    }
 
     private void initDataSet() {
         mDataSet.add(new ItemData(Color.parseColor("#76A9FC"), R.mipmap.ic_assessment_white_24dp, "Key", new Date(2014 - 1900, 2, 9)));
@@ -191,7 +140,7 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
     private void initRayMenu(RayMenu menu, int[] itemDrawables) {
         final int itemCount = itemDrawables.length;
         for (int i = 0; i < itemCount; i++) {
-            ImageView item = new ImageView(getContext());
+            ImageView item = new ImageView(ListPage.this);
             item.setImageResource(itemDrawables[i]);
 
             final int position = i;
@@ -201,7 +150,7 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
                 public void onClick(View v) {
 
 
-                    Toast.makeText(getContext(), "position:" + position, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ListPage.this, "position:" + position, Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -262,14 +211,14 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
         if (dialog.isAccentMode()) {
             accentPreselect = color;
             drawable.getPaint().setColor(color);
-            ThemeSingleton.get().positiveColor = DialogUtils.getActionTextStateList(getContext(), color);
-            ThemeSingleton.get().neutralColor = DialogUtils.getActionTextStateList(getContext(), color);
-            ThemeSingleton.get().negativeColor = DialogUtils.getActionTextStateList(getContext(), color);
+            ThemeSingleton.get().positiveColor = DialogUtils.getActionTextStateList(ListPage.this, color);
+            ThemeSingleton.get().neutralColor = DialogUtils.getActionTextStateList(ListPage.this, color);
+            ThemeSingleton.get().negativeColor = DialogUtils.getActionTextStateList(ListPage.this, color);
             ThemeSingleton.get().widgetColor = color;
         } else {
             primaryPreselect = color;
             drawable.getPaint().setColor(color);
-            if (getActivity().getActionBar() != null){
+            if (ListPage.this.getActionBar() != null){
                 mAdapter.setcolor(color);
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -320,7 +269,7 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
             itemViewHolder.checkImage.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE)
+                    new SweetAlertDialog(ListPage.this, SweetAlertDialog.WARNING_TYPE)
                             .setTitleText("Warning")
                             .setContentText("You have missed your personal belongings")
                             .setConfirmText("OK")
@@ -335,7 +284,7 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
             itemViewHolder.infoButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    new MaterialDialog.Builder(getContext())
+                    new MaterialDialog.Builder(ListPage.this)
                             .title(R.string.item_list_edit)
                             .content(R.string.item_list_edit_content)
                             .inputType(InputType.TYPE_CLASS_TEXT |
@@ -356,7 +305,7 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
                                         dialog.setContent(R.string.item_list_edit_content);
                                         dialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
                                         itemViewHolder.title.setText(input.toString());
-                                        Toast.makeText(getContext(), "Edited successfully", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(ListPage.this, "Edited successfully", Toast.LENGTH_SHORT).show();
                                     }
                                 }
                             }).show();
@@ -366,12 +315,12 @@ public class ListPage extends Fragment implements FlyRefreshLayout.OnPullRefresh
             itemViewHolder.icon.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-//                    setColorParmeter(drawable,accentPreselect,primaryPreselect);
-//                    new ColorChooserDialog.Builder(getActivity(), R.string.color_palette)
-//                            .titleSub(R.string.color_palette)
-//                            .preselect(primaryPreselect)
-//                            .show();
-//                    setItemViewHolder(itemViewHolder);
+                    setColorParmeter(drawable,accentPreselect,primaryPreselect);
+                    new ColorChooserDialog.Builder(ListPage.this, R.string.color_palette)
+                            .titleSub(R.string.color_palette)
+                            .preselect(primaryPreselect)
+                            .show();
+                    setItemViewHolder(itemViewHolder);
 
                 }
             });
