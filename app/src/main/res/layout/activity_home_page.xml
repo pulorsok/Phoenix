@@ -27,6 +27,7 @@
 
     <include layout="@layout/content_home_page" />
 
+    <!--Floating Button-->
     <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/menu_labels_right"
         android:layout_width="match_parent"
@@ -69,8 +70,6 @@
             style="@style/MenuButtonsStyle" />
 
     </com.github.clans.fab.FloatingActionMenu>
-
-
     <com.github.clans.fab.FloatingActionButton
         android:id="@+id/item_list_page_button"
         android:layout_width="wrap_content"
@@ -80,5 +79,8 @@
         android:layout_marginRight="16dp"
         android:src="@drawable/ic_menu"
         app:fab_elevationCompat="4dp" />
-
+    <FrameLayout
+        android:id="@+id/fragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </android.support.design.widget.CoordinatorLayout>

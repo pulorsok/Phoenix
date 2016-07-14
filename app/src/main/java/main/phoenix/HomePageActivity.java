@@ -3,6 +3,8 @@ package main.phoenix;
 import android.content.Intent;
 import android.os.Bundle;
 
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
@@ -40,9 +42,9 @@ public class HomePageActivity extends AppCompatActivity {
         ItemListBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setClass(getBaseContext(), ListPage.class);
-                startActivity(intent);
+                FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+                Fragment listPage = new ListPage();
+                ft.replace(R.id.fragment,listPage).commit();
             }
         });
 
