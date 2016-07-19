@@ -15,4 +15,6 @@
     <string name="child_icon">Child icon</string>
 
     <string name="color_palette">Color</string>
+    <string name="navigation_drawer_open">Navigation open</string>
+    <string name="navigation_drawer_close">Navigation close</string>
 </resources>

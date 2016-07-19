@@ -17,14 +17,18 @@ import android.os.Handler;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +40,6 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
-import com.afollestad.materialdialogs.color.CircleView;
 import com.afollestad.materialdialogs.color.ColorChooserDialog;
 import com.afollestad.materialdialogs.internal.ThemeSingleton;
 import com.afollestad.materialdialogs.util.DialogUtils;
@@ -47,7 +50,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
@@ -74,6 +76,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     NotificationManager notificationManager;
     Notification notification ;
 
+    private DrawerLayout mDrawerLayout;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,21 +84,52 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         setContentView(R.layout.list_page_main);
 
 
+
+
         soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION); // 通知音效的URI，在這裡使用系統內建的通知音效
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
         notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(soundUri).build(); // 建立通知
         notification.defaults=Notification.DEFAULT_ALL;
 
+
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, mDrawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mDrawerLayout.addDrawerListener(toggle);
+        toggle.syncState();
+
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.bringToFront();
+        navigationView.invalidate();
+        navigationView.setCheckedItem(R.id.home);
+        NavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener = new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(MenuItem item) {
+                mDrawerLayout.closeDrawer(GravityCompat.START);
+                /**
+                 *   Set the drawer listener
+                * */
+
+                return true;
+            }
+        };
+        navigationView.setNavigationItemSelectedListener(navigationItemSelectedListener);
         mFlylayout = (FlyRefreshLayout) findViewById(R.id.fly_layout);
 
         mFlylayout.setOnPullRefreshListener(this);
 
-        mListView = (RecyclerView) findViewById(R.id.list);
 
+
+        mLayoutManager = new LinearLayoutManager(this);
+
+
+        mListView = (RecyclerView) findViewById(R.id.list);
         mLayoutManager = new LinearLayoutManager(this);
         mListView.setLayoutManager(mLayoutManager);
         mAdapter = new ItemAdapter(this);
@@ -106,9 +140,13 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         mListView.setItemAnimator(new SampleItemAnimator());
 
 
-        RayMenu ItemListMenu = (RayMenu)findViewById(R.id.item_list_menu);
-        initRayMenu(ItemListMenu ,ITEM_DRAWABLES);
-        ItemListMenu.getRayLayout().setChildSize(125);
+
+
+
+
+//        RayMenu ItemListMenu = (RayMenu)findViewById(R.id.item_list_menu);
+//        initRayMenu(ItemListMenu ,ITEM_DRAWABLES);
+//        ItemListMenu.getRayLayout().setChildSize(125);
 
 
         View actionButton = mFlylayout.getHeaderActionButton();
@@ -186,7 +224,14 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
             }
         }, 2000);
     }
-
+    @Override
+    public void onBackPressed() {
+        if (mDrawerLayout != null && mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
+            mDrawerLayout.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
     private void bounceAnimateView(View view) {
         if (view == null) {
             return;
@@ -269,12 +314,24 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
             itemViewHolder.checkImage.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    new SweetAlertDialog(ListPage.this, SweetAlertDialog.WARNING_TYPE)
-                            .setTitleText("Warning")
-                            .setContentText("You have missed your personal belongings")
-                            .setConfirmText("OK")
-                            .show();
-                    notificationManager.notify(notifyID, notification); // 發送通知
+                    new android.os.Handler().postDelayed(
+                            new Runnable() {
+                                public void run() {
+                                    new SweetAlertDialog(ListPage.this, SweetAlertDialog.WARNING_TYPE)
+                                            .setTitleText("Warning")
+                                            .setContentText("You have missed your personal belongings")
+                                            .setConfirmText("OK")
+                                            .show();
+                                    notificationManager.notify(notifyID, notification); // 發送通知
+
+                                }
+                            }, 10000);
+//                    new SweetAlertDialog(ListPage.this, SweetAlertDialog.WARNING_TYPE)
+//                            .setTitleText("Warning")
+//                            .setContentText("You have missed your personal belongings")
+//                            .setConfirmText("OK")
+//                            .show();
+//                    notificationManager.notify(notifyID, notification); // 發送通知
                 }
             });
 
