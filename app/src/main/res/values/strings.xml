@@ -17,4 +17,10 @@
     <string name="color_palette">Color</string>
     <string name="navigation_drawer_open">Navigation open</string>
     <string name="navigation_drawer_close">Navigation close</string>
+
+    <string name="server_response">SERVER_RESPONSE</string>
+    <string name="server_message">SERVER_MESSAGE</string>
+    <string name="e_petition">Request error</string>
+    <string name="e_session_expired">Your session has expired</string>
+    <string name="sharedPreferences">login.page</string>
 </resources>
