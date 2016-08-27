@@ -15,13 +15,14 @@ import cz.msebera.android.httpclient.Header;
 
 public class AuthenticationJSONAsyncTask implements httpConnectInterface{
 
-    //private static final String BASE_URL = "http://da6a92f0.ngrok.io";
+
+
     PersistentCookieStore cookieStore;
 
     private static AsyncHttpClient client = new AsyncHttpClient();
 
     public static void get(String url, RequestParams params, AsyncHttpResponseHandler responseHandler) {
-        client.setTimeout(10000);
+        //client.setTimeout(10000);
         client.get(getAbsoluteUrl(url), params, responseHandler);
         Log.v("AsyncClient - GET", getAbsoluteUrl(url));
     }

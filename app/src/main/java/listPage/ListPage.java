@@ -29,6 +29,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.view.LayoutInflater;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,7 +54,10 @@ import java.util.Date;
 import java.util.Locale;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
+import login.page.sqliteController;
 import main.phoenix.R;
+import sqlite.sqliteDatabase;
+import sqlite.sqliteDatabaseContract;
 
 public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPullRefreshListener, ColorChooserDialog.ColorCallback {
     private static final int[] ITEM_DRAWABLES = { R.drawable.composer_camera, R.drawable.composer_music,
@@ -85,7 +89,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 
 
 
-
+        // Alert Notification
         soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION); // 通知音效的URI，在這裡使用系統內建的通知音效
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
         notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(soundUri).build(); // 建立通知
@@ -97,6 +101,8 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
+
+        // Drawer Menu Button init
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, mDrawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -107,7 +113,10 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.bringToFront();
         navigationView.invalidate();
-        navigationView.setCheckedItem(R.id.home);
+
+        Menu menu = navigationView.getMenu();
+        menu.add(R.id.group1,R.id.home,Menu.NONE,"asasd");
+        setNavigationMenuItem(menu);
         NavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener = new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
@@ -120,6 +129,9 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
             }
         };
         navigationView.setNavigationItemSelectedListener(navigationItemSelectedListener);
+
+
+
         mFlylayout = (FlyRefreshLayout) findViewById(R.id.fly_layout);
 
         mFlylayout.setOnPullRefreshListener(this);
@@ -160,6 +172,15 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         }
     }
 
+    private void setNavigationMenuItem(Menu menu){
+        sqliteController dbController = new sqliteController(getBaseContext());
+        String[] sensors = dbController.getSqliteSensor(sqliteDatabaseContract.USER_SESNSOR.TABLE);
+        for(String s : sensors){
+            menu.add(s);
+        }
+
+
+    }
     private void initDataSet() {
         mDataSet.add(new ItemData(Color.parseColor("#76A9FC"), R.mipmap.ic_assessment_white_24dp, "Key", new Date(2014 - 1900, 2, 9)));
         mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, "Note Book", new Date(2014 - 1900, 1, 3)));

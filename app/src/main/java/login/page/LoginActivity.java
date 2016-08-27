@@ -27,7 +27,7 @@ import main.phoenix.R;
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final int REQUEST_SIGNUP = 0;
-
+    private String UserResponse;
     @Bind(R.id.input_email)
     EditText _emailText;
     @Bind(R.id.input_password)
@@ -70,7 +70,7 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        _loginButton.setEnabled(false);
+       // _loginButton.setEnabled(false);
 
 //        final ProgressDialog progressDialog = new ProgressDialog(LoginActivity.this,
 //                R.style.AppTheme_Dark);
@@ -104,9 +104,14 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(getBaseContext(), response.getString(getBaseContext().getString(R.string.server_message)), Toast.LENGTH_SHORT).show();
                         //Intent i = new Intent(getBaseContext(), BaseActivity.class);
                         //startActivity(i);
+                        UserResponse = response.getString("userName");
+                        Log.v("userName",UserResponse);
+
                         onLoginSuccess();
                     } else if(response.getInt(getBaseContext().getString(R.string.server_response)) == 0){
                         Toast.makeText(getBaseContext(), response.getString(getBaseContext().getString(R.string.server_message)), Toast.LENGTH_SHORT).show();
+                        UserResponse = response.getString("userName");
+                        Log.v("userName",UserResponse);
                         onLoginFailed();
 
                     }
@@ -150,6 +155,9 @@ public class LoginActivity extends AppCompatActivity {
 
     public void onLoginSuccess() {
         _loginButton.setEnabled(true);
+        sqliteController logindata = new sqliteController(getBaseContext());
+        logindata.LoginInitial(UserResponse);
+
         finish();
     }
 

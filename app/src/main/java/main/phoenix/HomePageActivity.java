@@ -92,7 +92,16 @@ public class HomePageActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_home_page, menu);
+        //getMenuInflater().inflate(R.menu.menu_home_page, menu);
+
+        menu.add(1, 1, 0, "Open the file");
+
+        menu.add(1, 2, 1, "Save the file");
+
+        menu.add(1, 3, 2, "Close the file");
+
+
+
         return true;
     }
 
