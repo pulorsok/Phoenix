@@ -120,8 +120,6 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
 
-
-
         });
 //        new android.os.Handler().postDelayed(
 //                new Runnable() {
@@ -155,8 +153,9 @@ public class LoginActivity extends AppCompatActivity {
 
     public void onLoginSuccess() {
         _loginButton.setEnabled(true);
-        sqliteController logindata = new sqliteController(getBaseContext());
+        ListDataController logindata = new ListDataController(getBaseContext());
         logindata.LoginInitial(UserResponse);
+        logindata.GetSensorTagRelation();
 
         finish();
     }

@@ -5,7 +5,6 @@ import android.animation.ObjectAnimator;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
@@ -16,10 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -28,6 +24,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -54,12 +51,15 @@ import java.util.Date;
 import java.util.Locale;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
-import login.page.sqliteController;
+import login.page.ListDataController;
 import main.phoenix.R;
-import sqlite.sqliteDatabase;
 import sqlite.sqliteDatabaseContract;
 
 public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPullRefreshListener, ColorChooserDialog.ColorCallback {
+
+
+    private static String sensorPage = "all";
+
     private static final int[] ITEM_DRAWABLES = { R.drawable.composer_camera, R.drawable.composer_music,
             R.drawable.composer_place, R.drawable.composer_sleep, R.drawable.composer_thought, R.drawable.composer_with };
 
@@ -74,7 +74,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     private int primaryPreselect;
     private int accentPreselect;
     private ShapeDrawable drawable ;
-
+    private ListDataController dbController = new ListDataController(getBaseContext());
     int notifyID = 1; // 通知的識別號碼
     Uri soundUri ;
     NotificationManager notificationManager;
@@ -109,14 +109,13 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         mDrawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-
+        // Setting navigation data
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.bringToFront();
         navigationView.invalidate();
-
         Menu menu = navigationView.getMenu();
-        menu.add(R.id.group1,R.id.home,Menu.NONE,"asasd");
-        setNavigationMenuItem(menu);
+        menu.add(R.id.group1,R.id.home,Menu.NONE,"all");
+        setNavigationMenuItem(menu);  // Add sensor data to navigation menu
         NavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener = new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(MenuItem item) {
@@ -124,6 +123,10 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
                 /**
                  *   Set the drawer listener
                 * */
+                String itemName = item.getTitle().toString();
+                sensorPage = itemName;
+                updateDataSet();
+                Log.v("get Item Name",itemName);
 
                 return true;
             }
@@ -133,7 +136,6 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 
 
         mFlylayout = (FlyRefreshLayout) findViewById(R.id.fly_layout);
-
         mFlylayout.setOnPullRefreshListener(this);
 
 
@@ -144,8 +146,10 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         mListView = (RecyclerView) findViewById(R.id.list);
         mLayoutManager = new LinearLayoutManager(this);
         mListView.setLayoutManager(mLayoutManager);
-        mAdapter = new ItemAdapter(this);
 
+
+
+        mAdapter = new ItemAdapter(this);
 
         mListView.setAdapter(mAdapter);
 
@@ -172,28 +176,60 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         }
     }
 
+    /**
+     *  Get sensor data from sqlite and add to navigation menu
+     * @param menu
+     */
     private void setNavigationMenuItem(Menu menu){
-        sqliteController dbController = new sqliteController(getBaseContext());
-        String[] sensors = dbController.getSqliteSensor(sqliteDatabaseContract.USER_SESNSOR.TABLE);
+
+        String[] sensors = dbController.getSqliteSelect(sqliteDatabaseContract.USER_SESNSOR.TABLE,sqliteDatabaseContract.USER_SESNSOR.SENSOR);
         for(String s : sensors){
             menu.add(s);
         }
-
-
     }
+
+    /**
+     *  Init list adapter data
+     */
     private void initDataSet() {
-        mDataSet.add(new ItemData(Color.parseColor("#76A9FC"), R.mipmap.ic_assessment_white_24dp, "Key", new Date(2014 - 1900, 2, 9)));
-        mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, "Note Book", new Date(2014 - 1900, 1, 3)));
-        mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, "wallet", new Date(2014 - 1900, 0, 9)));
+//        mDataSet.add(new ItemData(Color.parseColor("#76A9FC"), R.mipmap.ic_assessment_white_24dp, "Key", new Date(2014 - 1900, 2, 9)));
+//        mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, "Note Book", new Date(2014 - 1900, 1, 3)));
+//        mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, "wallet", new Date(2014 - 1900, 0, 9)));
+//
+
+        String[] alltags = dbController.getSqliteSelect(sqliteDatabaseContract.USER_TAG.TABLE,sqliteDatabaseContract.USER_TAG.TAG);
+        for(String s: alltags){
+            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, s,new Date()));
+        }
+    }
+    private void updateDataSet(){
+        //String conditionQuery = sqliteDatabaseContract.SENSOR_TAG.SENSOR + " = " + "'" + sensorPage + "'";
+        //mDataSet.clear();
+        String[] sensorTags = dbController.getSqliteSelect(
+                sqliteDatabaseContract.SENSOR_TAG.TABLE,
+                sqliteDatabaseContract.SENSOR_TAG.TAG,
+                sqliteDatabaseContract.SelectConditionQurey.tagOrderFromSensor(sqliteDatabaseContract.SENSOR_TAG.SENSOR,sensorPage)
+                );
+        mDataSet.clear();
+        for(String s: sensorTags){
+            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, s,new Date()));
+        }
+        mListView.removeAllViews();
+        mAdapter = new ItemAdapter(this);
+
+        mListView.setAdapter(mAdapter);
+
+        mListView.setItemAnimator(new SampleItemAnimator());
     }
 
     private void addItemData() {
         ItemData itemData = new ItemData(Color.parseColor("#FFC970"), R.mipmap.ic_smartphone_white_24dp, "Magic Cube Show", new Date());
+        //mDataSet.remove(0);
+        //mAdapter.notifyItemRemoved(0);
+        //mDataSet.add(0, itemData);
+        //mAdapter.notifyItemInserted(0);
 
-        mDataSet.add(0, itemData);
-        mAdapter.notifyItemInserted(0);
-
-        mLayoutManager.scrollToPosition(0);
+        //mLayoutManager.scrollToPosition(0);
     }
 
     private void initRayMenu(RayMenu menu, int[] itemDrawables) {
