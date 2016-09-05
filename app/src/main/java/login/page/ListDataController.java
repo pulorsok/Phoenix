@@ -3,6 +3,8 @@ package login.page;
 import android.content.Context;
 import android.database.Cursor;
 import android.provider.ContactsContract;
+import android.provider.Settings;
+import android.util.Log;
 
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
@@ -23,6 +25,7 @@ public class ListDataController implements httpConnectInterface {
     private Context context;
     private String user;
     private static sqliteDatabase Database ;
+
     public ListDataController(Context context){
         this.context = context;
     }
@@ -35,6 +38,7 @@ public class ListDataController implements httpConnectInterface {
 
         this.user = user;
         req.put("user",user);
+
         Database = new sqliteDatabase(context,user);
 
 

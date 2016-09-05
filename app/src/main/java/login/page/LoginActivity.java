@@ -21,6 +21,7 @@ import butterknife.ButterKnife;
 import cz.msebera.android.httpclient.Header;
 import http.AuthenticationJSONAsyncTask;
 import http.mJsonHttpResponseHandler;
+import listPage.ListPage;
 import main.phoenix.R;
 
 
@@ -153,11 +154,14 @@ public class LoginActivity extends AppCompatActivity {
 
     public void onLoginSuccess() {
         _loginButton.setEnabled(true);
+
         ListDataController logindata = new ListDataController(getBaseContext());
         logindata.LoginInitial(UserResponse);
         logindata.GetSensorTagRelation();
 
-        finish();
+        Intent intent = new Intent(this, ListPage.class);
+        startActivity(intent);
+        //finish();
     }
 
     public void onLoginFailed() {

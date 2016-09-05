@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "121246321777",
+    "firebase_url": "https://pundo-e0ce6.firebaseio.com",
+    "project_id": "pundo-e0ce6",
+    "storage_bucket": "pundo-e0ce6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:121246321777:android:a75445feb891e958",
+        "android_client_info": {
+          "package_name": "com.pundo.android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "121246321777-n9v26i4eusj6ktse4rnok2tfotvjhqau.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pundo.android",
+            "certificate_hash": "79D99AD3E2BE9B4AD37F24B616A6A8F1829A5CE1"
+          }
+        },
+        {
+          "client_id": "121246321777-cl89csultabb0fg53q20k0qmik5h9ofs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDef6F-fqajY4gVXOLjjIt9GBRIm0Ew_gY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "121246321777-cl89csultabb0fg53q20k0qmik5h9ofs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

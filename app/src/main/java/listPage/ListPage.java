@@ -5,6 +5,7 @@ import android.animation.ObjectAnimator;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
@@ -52,6 +53,7 @@ import java.util.Locale;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 import login.page.ListDataController;
+import login.page.LoginActivity;
 import main.phoenix.R;
 import sqlite.sqliteDatabaseContract;
 
@@ -82,10 +84,14 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 
     private DrawerLayout mDrawerLayout;
 
+
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initDataSet();
+
         setContentView(R.layout.list_page_main);
+
+
+
 
 
 
@@ -96,10 +102,14 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         notification.defaults=Notification.DEFAULT_ALL;
 
 
-
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        // Toolbar setting
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
+        toolbar.setTitle(sensorPage);
+
+        // sensor and tag data
+        initDataSet();
 
 
         // Drawer Menu Button init
@@ -127,32 +137,25 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
                 sensorPage = itemName;
                 updateDataSet();
                 Log.v("get Item Name",itemName);
-
+                toolbar.setTitle(sensorPage);
                 return true;
             }
         };
         navigationView.setNavigationItemSelectedListener(navigationItemSelectedListener);
 
 
-
+        // fly
         mFlylayout = (FlyRefreshLayout) findViewById(R.id.fly_layout);
         mFlylayout.setOnPullRefreshListener(this);
 
 
 
+        // List init
         mLayoutManager = new LinearLayoutManager(this);
-
-
         mListView = (RecyclerView) findViewById(R.id.list);
-        mLayoutManager = new LinearLayoutManager(this);
         mListView.setLayoutManager(mLayoutManager);
-
-
-
         mAdapter = new ItemAdapter(this);
-
         mListView.setAdapter(mAdapter);
-
         mListView.setItemAnimator(new SampleItemAnimator());
 
 
@@ -205,14 +208,20 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     private void updateDataSet(){
         //String conditionQuery = sqliteDatabaseContract.SENSOR_TAG.SENSOR + " = " + "'" + sensorPage + "'";
         //mDataSet.clear();
-        String[] sensorTags = dbController.getSqliteSelect(
-                sqliteDatabaseContract.SENSOR_TAG.TABLE,
-                sqliteDatabaseContract.SENSOR_TAG.TAG,
-                sqliteDatabaseContract.SelectConditionQurey.tagOrderFromSensor(sqliteDatabaseContract.SENSOR_TAG.SENSOR,sensorPage)
-                );
+        String[] sensorTags = null;
+        if(sensorPage == "all")
+            sensorTags = dbController.getSqliteSelect(sqliteDatabaseContract.USER_TAG.TABLE,sqliteDatabaseContract.USER_TAG.TAG);
+        else
+            sensorTags = dbController.getSqliteSelect(
+                    sqliteDatabaseContract.SENSOR_TAG.TABLE,
+                    sqliteDatabaseContract.SENSOR_TAG.TAG,
+                    sqliteDatabaseContract.SelectConditionQurey.tagOrderFromSensor(sqliteDatabaseContract.SENSOR_TAG.SENSOR,sensorPage)
+            );
+
+
         mDataSet.clear();
         for(String s: sensorTags){
-            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, s,new Date()));
+            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_smartphone_white_24dp, s,new Date()));
         }
         mListView.removeAllViews();
         mAdapter = new ItemAdapter(this);
@@ -224,12 +233,11 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 
     private void addItemData() {
         ItemData itemData = new ItemData(Color.parseColor("#FFC970"), R.mipmap.ic_smartphone_white_24dp, "Magic Cube Show", new Date());
-        //mDataSet.remove(0);
-        //mAdapter.notifyItemRemoved(0);
-        //mDataSet.add(0, itemData);
-        //mAdapter.notifyItemInserted(0);
 
-        //mLayoutManager.scrollToPosition(0);
+
+        mDataSet.add(0, itemData);
+        mAdapter.notifyItemInserted(0);
+        mLayoutManager.scrollToPosition(0);
     }
 
     private void initRayMenu(RayMenu menu, int[] itemDrawables) {
@@ -306,7 +314,8 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     }
     @Override
     public void onRefreshAnimationEnd(FlyRefreshLayout view) {
-        addItemData();
+        updateDataSet();
+
     }
     @Override
     public void onColorSelection(@NonNull ColorChooserDialog dialog, @ColorInt int color) {
