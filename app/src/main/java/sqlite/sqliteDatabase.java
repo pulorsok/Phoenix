@@ -18,6 +18,7 @@ import java.util.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
+import java.util.TimeZone;
 
 import sqlite.sqliteDatabaseContract.*;
 /**
@@ -60,6 +61,15 @@ public class sqliteDatabase extends SQLiteOpenHelper {
                     SENSOR_TAG._ID + " INTEGER PRIMARY KEY," +
                     SENSOR_TAG.SENSOR + TEXT + COM +
                     SENSOR_TAG.TAG + TEXT +
+                    SENSOR_TAG.LOCATION + TEXT +
+                    " )";
+    private static final String SQL_CREAT_HISTORY =
+            "CREATE TABLE " + HISTORY.TABLE + " (" +
+                    HISTORY._ID + " INTEGER PRIMARY KEY," +
+                    HISTORY.HIS_ID + TEXT + COM +
+                    HISTORY.TAG + TEXT + COM +
+                    HISTORY.DATE + INT + COM +
+                    HISTORY.LOCATION + INT +
                     " )";
 
 
@@ -84,6 +94,7 @@ public class sqliteDatabase extends SQLiteOpenHelper {
         db.execSQL(SQL_CREATE_USER_TAG);
         db.execSQL(SQL_CREATE_USER_SENSOR);
         db.execSQL(SQL_CREATE_SENSOR_TAG_RELATION);
+        db.execSQL(SQL_CREAT_HISTORY);
     }
 
     /**
@@ -129,7 +140,42 @@ public class sqliteDatabase extends SQLiteOpenHelper {
             e.printStackTrace();
         }
     }
-    public void InsertSensorTagrelation(JSONArray json){
+
+
+    public void testInsert(JSONArray json){
+        for(int i = 0; i < json.length() ; i++){
+            Log.d("History json", json.toString());
+        }
+    }
+    public void InsertHistory(JSONArray json){
+        try{
+            ContentValues content = new ContentValues();
+
+            for(int i = 0; i < json.length() ; i++){
+                JSONObject obj = json.getJSONObject(i);
+                content.put("history_id",obj.getString("history_id"));
+                content.put("tag",obj.getString("tagName"));
+                content.put("location",obj.getInt("location"));
+                content.put("date","2016:12:1:141");
+
+                if (getCount(HISTORY.TABLE,HISTORY.HIS_ID,obj.getString(HISTORY.HIS_ID))) {
+                    Log.d("history exist check",obj.getString("history_id"));
+                    getWritableDatabase().insert(HISTORY.TABLE, null, content);
+                }
+
+
+
+            }
+            content.clear();
+
+        }catch(JSONException e){
+            e.printStackTrace();
+        }
+
+
+    }
+
+    public void InsertSensorTagRelation(JSONArray json){
         try {
 
             for (int i = 0; i < json.length(); i++) {
@@ -180,6 +226,7 @@ public class sqliteDatabase extends SQLiteOpenHelper {
 
             if (c.moveToFirst())
                 return false;
+//            Log.d("sasdads",c.getString(c.getColumnIndex("tagName")));
             return true;
         }
         finally {
@@ -187,8 +234,22 @@ public class sqliteDatabase extends SQLiteOpenHelper {
                 c.close();
         }
     }
-
-
+    public boolean getCountall(String tableName, String columnName, String name) {
+        Cursor c = null;
+        try {
+            String query = "select " + columnName + " from " + tableName + " where " + columnName + " = " + "'" + name + "'";
+            c = getReadableDatabase().rawQuery(query,null);
+            Log.d("check a ", query);
+            if (c.moveToFirst())
+                return false;
+//            Log.d("sasdads",c.getString(c.getColumnIndex("tagName")));
+            return true;
+        }
+        finally {
+            if (c != null)
+                c.close();
+        }
+    }
 
     /**
      *  Select all data from tableName

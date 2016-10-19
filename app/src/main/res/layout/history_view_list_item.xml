@@ -44,12 +44,11 @@
     </RelativeLayout>
 
     <ImageButton
-        android:id="@+id/edit_btn"
-        android:layout_width= "30dp"
-        android:layout_height="30dp"
-        android:src="@android:drawable/ic_dialog_info"
+        android:id="@+id/check"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_margin="4dp"
+        android:scaleType="centerInside" />
 
 
-
-        />
 </LinearLayout>

@@ -1,4 +1,4 @@
-package login.page;
+package dataController;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -9,12 +9,14 @@ import android.util.Log;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
 import cz.msebera.android.httpclient.Header;
 import http.AuthenticationJSONAsyncTask;
 import http.httpConnectInterface;
 import sqlite.sqliteDatabase;
+import sqlite.sqliteDatabaseContract;
 
 
 /**
@@ -40,7 +42,7 @@ public class ListDataController implements httpConnectInterface {
         req.put("user",user);
 
         Database = new sqliteDatabase(context,user);
-
+        requestHistory();
 
         AuthenticationJSONAsyncTask.get(SQLITE_INIT, req, new JsonHttpResponseHandler() {
               @Override
@@ -53,25 +55,42 @@ public class ListDataController implements httpConnectInterface {
         });
     }
 
-    public void GetSensorTagRelation(){
+    public void  requestSensorTagRelation(){
 
         req.put("user",user);
         AuthenticationJSONAsyncTask.get(SQLITE_SEN_TAG_REL, req, new JsonHttpResponseHandler() {
+
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
                 super.onSuccess(statusCode, headers, response);
-                Database.InsertSensorTagrelation(response);
+                Database.InsertSensorTagRelation(response);
             }
         });
     }
 
+    public void requestHistory(){
+        req.put("user", user);
+        AuthenticationJSONAsyncTask.get(SQLITE_HISTORY, req, new JsonHttpResponseHandler(){
 
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
+                super.onSuccess(statusCode, headers, response);
+                Database.InsertHistory(response);
+
+            }
+        });
+    }
+
+    public Cursor getHistory(){
+        return Database.SelectTable(sqliteDatabaseContract.HISTORY.TABLE);
+    }
     /**
      *    Select sqlite data
      * @param tableName select table name
      * @param columnName select column name
      * @return  String array
      */
+
     public String[] getSqliteSelect(String tableName,String columnName){
 
         // Call database to select sensor and put the cursor back
@@ -107,5 +126,15 @@ public class ListDataController implements httpConnectInterface {
 
         c.close();
         return sensor.toArray(new String[sensor.size()]);
+    }
+    /**
+     * DataBase Close
+     */
+
+    public void cleanDB(){
+        Database.getWritableDatabase().execSQL("delete from "+ sqliteDatabaseContract.HISTORY.TABLE);
+        Database.getWritableDatabase().execSQL("delete from "+ sqliteDatabaseContract.SENSOR_TAG.TABLE);
+        Database.getWritableDatabase().execSQL("delete from "+ sqliteDatabaseContract.USER_SESNSOR.TABLE);
+        Database.getWritableDatabase().execSQL("delete from "+ sqliteDatabaseContract.USER_TAG.TABLE);
     }
 }

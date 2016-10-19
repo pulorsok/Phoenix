@@ -26,7 +26,16 @@ public class sqliteDatabaseContract {
         public static final String TABLE = "SENSOR_TAG_RELATION";
         public static final String SENSOR = "sensor";
         public static final String TAG = "tag";
+        public static final String LOCATION = "location";
     }
+    public static abstract class HISTORY implements BaseColumns{
+        public static final String TABLE = "history";
+        public static final String HIS_ID = "history_id";
+        public static final String TAG = "tag";
+        public static final String DATE = "date";
+        public static final String LOCATION = "location";
+    }
+
 
     /**
      *  Sql query of select condition

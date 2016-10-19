@@ -2,10 +2,15 @@ package listPage;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
@@ -14,9 +19,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -26,12 +36,16 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
+import android.webkit.WebView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -44,6 +58,9 @@ import com.afollestad.materialdialogs.internal.ThemeSingleton;
 import com.afollestad.materialdialogs.util.DialogUtils;
 import com.dd.CircularProgressButton;
 import com.capricorn.RayMenu;
+import com.github.clans.fab.FloatingActionButton;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.race604.flyrefresh.FlyRefreshLayout;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -51,39 +68,63 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-import cn.pedant.SweetAlert.SweetAlertDialog;
-import login.page.ListDataController;
-import login.page.LoginActivity;
+import gcm.QuickstartPreferences;
+import gcm.RegistrationIntentService;
+import dataController.ListDataController;
 import main.phoenix.R;
 import sqlite.sqliteDatabaseContract;
 
 public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPullRefreshListener, ColorChooserDialog.ColorCallback {
 
+    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+    private static final String TAG = "MainActivity";
+    private BroadcastReceiver mRegistrationBroadcastReceiver;
 
+    private boolean isReceiverRegistered;
     private static String sensorPage = "all";
 
     private static final int[] ITEM_DRAWABLES = { R.drawable.composer_camera, R.drawable.composer_music,
             R.drawable.composer_place, R.drawable.composer_sleep, R.drawable.composer_thought, R.drawable.composer_with };
 
+
+    /**
+     * View parameter
+     */
+    private NavigationView navigationView;
     private FlyRefreshLayout mFlylayout;
     private RecyclerView mListView;
+    private FloatingActionButton hisUp; // history page up
+    private FloatingActionButton hisDown; // history page down
 
+    /**
+     * View Controller
+     */
     private ItemAdapter mAdapter;
-
     private ArrayList<ItemData> mDataSet = new ArrayList<>();
     private Handler mHandler = new Handler();
     private LinearLayoutManager mLayoutManager;
     private int primaryPreselect;
     private int accentPreselect;
     private ShapeDrawable drawable ;
+
+    /**
+     * DB ,notification , server
+     */
     private ListDataController dbController = new ListDataController(getBaseContext());
     int notifyID = 1; // 通知的識別號碼
     Uri soundUri ;
     NotificationManager notificationManager;
     Notification notification ;
 
+
+    private Context context = ListPage.this;
+    public static Boolean alertCheck = false;
     private DrawerLayout mDrawerLayout;
 
+    private WebView mWebview ;
+
+    private FragmentManager fgm = getSupportFragmentManager();
+    private Fragment history = new HistoryListPage();
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,6 +141,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
         notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(soundUri).build(); // 建立通知
         notification.defaults=Notification.DEFAULT_ALL;
+
 
 
         // Toolbar setting
@@ -120,11 +162,11 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         toggle.syncState();
 
         // Setting navigation data
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.bringToFront();
         navigationView.invalidate();
         Menu menu = navigationView.getMenu();
-        menu.add(R.id.group1,R.id.home,Menu.NONE,"all");
+        menu.add(R.id.group1,R.id.home,Menu.NONE,"ALL");
         setNavigationMenuItem(menu);  // Add sensor data to navigation menu
         NavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener = new NavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -160,13 +202,31 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 
 
 
+        final Activity activity = this;
+        mWebview  = new WebView(this);
+        hisUp = (FloatingActionButton)findViewById(R.id.his_up_button);
+        hisDown = (FloatingActionButton)findViewById(R.id.his_down_button);
+        hisUp.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentTransaction fts = fgm.beginTransaction();
+                fts.setCustomAnimations(R.anim.slide_in_up,R.anim.slide_in_down);
+                fts.add(R.id.history,history).commit();
+                hisUp.setVisibility(View.GONE);
+                hisDown.setVisibility(View.VISIBLE);
 
-
-
-//        RayMenu ItemListMenu = (RayMenu)findViewById(R.id.item_list_menu);
-//        initRayMenu(ItemListMenu ,ITEM_DRAWABLES);
-//        ItemListMenu.getRayLayout().setChildSize(125);
-
+            }
+        });
+        hisDown.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentTransaction fts = fgm.beginTransaction();
+                fts.setCustomAnimations(R.anim.slide_in_up,R.anim.slide_in_down);
+                fts.remove(history).commit();
+                hisDown.setVisibility(View.GONE);
+                hisUp.setVisibility(View.VISIBLE);
+            }
+        });
 
         View actionButton = mFlylayout.getHeaderActionButton();
         if (actionButton != null) {
@@ -177,7 +237,88 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
                 }
             });
         }
+
+        // Registering BroadcastReceiver
+        mRegistrationBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                //mRegistrationProgressBar.setVisibility(ProgressBar.GONE);
+                SharedPreferences sharedPreferences =
+                        PreferenceManager.getDefaultSharedPreferences(context);
+                boolean sentToken = sharedPreferences
+                        .getBoolean(QuickstartPreferences.SENT_TOKEN_TO_SERVER, false);
+                if (sentToken) {
+                    //mInformationTextView.setText(getString(R.string.gcm_send_message));
+                } else {
+                    //mInformationTextView.setText(getString(R.string.token_error_message));
+                }
+            }
+        };
+        registerReceiver();
+
+        if (checkPlayServices()) {
+            // Start IntentService to register this application with GCM.
+            Intent intent = new Intent(this, RegistrationIntentService.class);
+            startService(intent);
+        }
+
+
+
     }
+
+
+    /**
+     * GCM
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver();
+
+    }
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            //preventing default implementation previous to android.os.Build.VERSION_CODES.ECLAIR
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+    @Override
+    protected void onPause() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRegistrationBroadcastReceiver);
+        isReceiverRegistered = false;
+        super.onPause();
+    }
+
+    private void registerReceiver(){
+        if(!isReceiverRegistered) {
+            LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                    new IntentFilter(QuickstartPreferences.REGISTRATION_COMPLETE));
+            isReceiverRegistered = true;
+        }
+    }
+    /**
+     * Check the device to make sure it has the Google Play Services APK. If
+     * it doesn't, display a dialog that allows users to download the APK from
+     * the Google Play Store or enable it in the device's system settings.
+     */
+    private boolean checkPlayServices() {
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                apiAvailability.getErrorDialog(this, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST)
+                        .show();
+            } else {
+                Log.i(TAG, "This device is not supported.");
+                finish();
+            }
+            return false;
+        }
+        return true;
+    }
+
 
     /**
      *  Get sensor data from sqlite and add to navigation menu
@@ -202,22 +343,26 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 
         String[] alltags = dbController.getSqliteSelect(sqliteDatabaseContract.USER_TAG.TABLE,sqliteDatabaseContract.USER_TAG.TAG);
         for(String s: alltags){
-            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, s,new Date()));
+            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_smartphone_white_24dp, s,new Date()));
         }
     }
     private void updateDataSet(){
         //String conditionQuery = sqliteDatabaseContract.SENSOR_TAG.SENSOR + " = " + "'" + sensorPage + "'";
         //mDataSet.clear();
         String[] sensorTags = null;
-        if(sensorPage == "all")
-            sensorTags = dbController.getSqliteSelect(sqliteDatabaseContract.USER_TAG.TABLE,sqliteDatabaseContract.USER_TAG.TAG);
-        else
+
+        
+        if(sensorPage == "ALL") {
+
+            sensorTags = dbController.getSqliteSelect(sqliteDatabaseContract.USER_TAG.TABLE, sqliteDatabaseContract.USER_TAG.TAG);
+        }else{
+
             sensorTags = dbController.getSqliteSelect(
                     sqliteDatabaseContract.SENSOR_TAG.TABLE,
                     sqliteDatabaseContract.SENSOR_TAG.TAG,
-                    sqliteDatabaseContract.SelectConditionQurey.tagOrderFromSensor(sqliteDatabaseContract.SENSOR_TAG.SENSOR,sensorPage)
+                    sqliteDatabaseContract.SelectConditionQurey.tagOrderFromSensor(sqliteDatabaseContract.SENSOR_TAG.SENSOR, sensorPage)
             );
-
+        }
 
         mDataSet.clear();
         for(String s: sensorTags){
@@ -229,6 +374,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         mListView.setAdapter(mAdapter);
 
         mListView.setItemAnimator(new SampleItemAnimator());
+
     }
 
     private void addItemData() {
@@ -317,6 +463,12 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         updateDataSet();
 
     }
+
+    /**
+     *  Color picker planet
+     * @param dialog
+     * @param color
+     */
     @Override
     public void onColorSelection(@NonNull ColorChooserDialog dialog, @ColorInt int color) {
         if (dialog.isAccentMode()) {
@@ -376,30 +528,19 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
             itemViewHolder.icon.setImageResource(data.icon);
             itemViewHolder.title.setText(data.title);
             itemViewHolder.subTitle.setText(dateFormat.format(data.time));
-            itemViewHolder.checkImage.setIndeterminateProgressMode(true);
-            itemViewHolder.checkImage.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    new android.os.Handler().postDelayed(
-                            new Runnable() {
-                                public void run() {
-                                    new SweetAlertDialog(ListPage.this, SweetAlertDialog.WARNING_TYPE)
-                                            .setTitleText("Warning")
-                                            .setContentText("You have missed your personal belongings")
-                                            .setConfirmText("OK")
-                                            .show();
-                                    notificationManager.notify(notifyID, notification); // 發送通知
+//            itemViewHolder.checkImage.setIndeterminateProgressMode(true);
+//            itemViewHolder.checkImage.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
 
-                                }
-                            }, 10000);
-//                    new SweetAlertDialog(ListPage.this, SweetAlertDialog.WARNING_TYPE)
-//                            .setTitleText("Warning")
-//                            .setContentText("You have missed your personal belongings")
-//                            .setConfirmText("OK")
-//                            .show();
-//                    notificationManager.notify(notifyID, notification); // 發送通知
-                }
-            });
+////                    new SweetAlertDialog(ListPage.this, SweetAlertDialog.WARNING_TYPE)
+////                            .setTitleText("Warning")
+////                            .setContentText("You have missed your personal belongings")
+////                            .setConfirmText("OK")
+////                            .show();
+////                    notificationManager.notify(notifyID, notification); // 發送通知
+//                }
+//            });
 
             /**
              *  Initial information button
@@ -480,7 +621,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
             icon = (ImageButton) itemView.findViewById(R.id.icon);
             title = (TextView) itemView.findViewById(R.id.title);
             subTitle = (TextView) itemView.findViewById(R.id.subtitle);
-            checkImage = (CircularProgressButton) itemView.findViewById(R.id.btnWithText);
+            //checkImage = (CircularProgressButton) itemView.findViewById(R.id.btnWithText);
             infoButton = (ImageButton)itemView.findViewById(R.id.edit_btn);
         }
 

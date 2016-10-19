@@ -19,6 +19,7 @@ import org.json.JSONObject;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import cz.msebera.android.httpclient.Header;
+import dataController.ListDataController;
 import http.AuthenticationJSONAsyncTask;
 import http.mJsonHttpResponseHandler;
 import listPage.ListPage;
@@ -157,11 +158,12 @@ public class LoginActivity extends AppCompatActivity {
 
         ListDataController logindata = new ListDataController(getBaseContext());
         logindata.LoginInitial(UserResponse);
-        logindata.GetSensorTagRelation();
+        logindata.requestSensorTagRelation();
 
         Intent intent = new Intent(this, ListPage.class);
         startActivity(intent);
-        //finish();
+
+
     }
 
     public void onLoginFailed() {
