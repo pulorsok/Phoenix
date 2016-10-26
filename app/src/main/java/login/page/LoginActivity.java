@@ -1,6 +1,8 @@
 package login.page;
 
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -18,6 +20,7 @@ import org.json.JSONObject;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import cn.pedant.SweetAlert.SweetAlertDialog;
 import cz.msebera.android.httpclient.Header;
 import dataController.ListDataController;
 import http.AuthenticationJSONAsyncTask;
@@ -30,6 +33,7 @@ public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final int REQUEST_SIGNUP = 0;
     private String UserResponse;
+    //static SweetAlertDialog pDialog = new SweetAlertDialog(this, SweetAlertDialog.PROGRESS_TYPE);
     @Bind(R.id.input_email)
     EditText _emailText;
     @Bind(R.id.input_password)
@@ -38,13 +42,13 @@ public class LoginActivity extends AppCompatActivity {
     Button _loginButton;
     @Bind(R.id.link_signup)
     TextView _signupLink;
-    
+    SweetAlertDialog pDialog;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
-        
+        pDialog = new SweetAlertDialog(this, SweetAlertDialog.PROGRESS_TYPE);
         _loginButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -88,7 +92,12 @@ public class LoginActivity extends AppCompatActivity {
         params.put("username", email);
         params.put("password", password);
 
+        pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
+        pDialog.setTitleText("Loading");
+        pDialog.show();
         AuthenticationJSONAsyncTask.post("/passport/authenticate", params, new mJsonHttpResponseHandler(this) {
+
+
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 try {
@@ -156,10 +165,13 @@ public class LoginActivity extends AppCompatActivity {
     public void onLoginSuccess() {
         _loginButton.setEnabled(true);
 
+
         ListDataController logindata = new ListDataController(getBaseContext());
         logindata.LoginInitial(UserResponse);
         logindata.requestSensorTagRelation();
+        logindata.getRemind();
 
+        pDialog.dismiss();
         Intent intent = new Intent(this, ListPage.class);
         startActivity(intent);
 

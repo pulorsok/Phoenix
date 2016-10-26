@@ -29,6 +29,7 @@ import com.google.android.gms.iid.InstanceID;
 
 import java.io.IOException;
 
+import dataController.ListDataController;
 import main.phoenix.R;
 
 public class RegistrationIntentService extends IntentService {
@@ -90,6 +91,7 @@ public class RegistrationIntentService extends IntentService {
      */
     private void sendRegistrationToServer(String token) {
         // Add custom implementation, as needed.
+        new ListDataController(getBaseContext()).sendToken(token);
     }
 
     /**

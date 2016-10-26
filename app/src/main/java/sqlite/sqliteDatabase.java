@@ -114,7 +114,8 @@ public class sqliteDatabase extends SQLiteOpenHelper {
      */
     public void DataBaseInit(JSONObject json){
         try {
-
+            //getWritableDatabase().delete(USER_TAG.TABLE,"1==1",null);
+            //getWritableDatabase().delete(USER_SESNSOR.TABLE,"1==1",null);
             JSONArray tagArray = json.getJSONArray("tag");
             JSONArray sensorArray = json.getJSONArray("sensor");
             ContentValues tag = new ContentValues();
@@ -149,6 +150,8 @@ public class sqliteDatabase extends SQLiteOpenHelper {
     }
     public void InsertHistory(JSONArray json){
         try{
+            getWritableDatabase().delete("history","1==1",null);
+            //getWritableDatabase().execSQL(SQL_CREAT_HISTORY);
             ContentValues content = new ContentValues();
 
             for(int i = 0; i < json.length() ; i++){
@@ -156,13 +159,10 @@ public class sqliteDatabase extends SQLiteOpenHelper {
                 content.put("history_id",obj.getString("history_id"));
                 content.put("tag",obj.getString("tagName"));
                 content.put("location",obj.getInt("location"));
-                content.put("date","2016:12:1:141");
-
-                if (getCount(HISTORY.TABLE,HISTORY.HIS_ID,obj.getString(HISTORY.HIS_ID))) {
-                    Log.d("history exist check",obj.getString("history_id"));
-                    getWritableDatabase().insert(HISTORY.TABLE, null, content);
-                }
-
+                Log.v("history date", obj.getString("date"));
+                content.put("date",obj.getString("date"));
+                Log.d("history exist check",obj.getString("history_id"));
+                getWritableDatabase().insert(HISTORY.TABLE, null, content);
 
 
             }
@@ -178,7 +178,9 @@ public class sqliteDatabase extends SQLiteOpenHelper {
     public void InsertSensorTagRelation(JSONArray json){
         try {
 
+            getWritableDatabase().delete(SENSOR_TAG.TABLE,"1==1",null);
             for (int i = 0; i < json.length(); i++) {
+
                 JSONObject obj = json.getJSONObject(i); // Parse sensor of json
                 Iterator iterator = obj.keys(); // get sensor keys access
 

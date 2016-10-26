@@ -1,4 +1,4 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:fab="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -56,33 +56,52 @@
 
     </android.support.v4.widget.DrawerLayout>
 
-    <com.github.clans.fab.FloatingActionButton
+    <com.github.clans.fab.FloatingActionMenu
         android:id="@+id/item_add_button"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginBottom="8dp"
         android:layout_marginRight="8dp"
         android:layout_gravity="right|bottom"
-        android:src="@drawable/ic_edit"
+        android:src="@drawable/ic_edit">
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/pm_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                fab:fab_size="mini"
+                fab:fab_label="ＰM Check"
+                android:src="@android:drawable/star_big_on"
+                />
+            <com.github.clans.fab.FloatingActionButton
+                android:id="@+id/rain_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                fab:fab_size="mini"
+                fab:fab_label="Rain Check"
+                android:src="@android:drawable/star_big_on"
+                 />
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/his_up_button"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginRight="8dp"
+            android:layout_gravity="left|bottom"
+            fab:fab_label="歷史紀錄"
+            android:src="@android:drawable/star_big_off" />
+        <com.github.clans.fab.FloatingActionButton
+            android:id="@+id/his_down_button"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_gravity="left|bottom"
+            fab:fab_label="歷史紀錄"
+            android:src="@android:drawable/star_big_on"
+            android:visibility="gone" />
+    </com.github.clans.fab.FloatingActionMenu>
 
-        />
 
-    <com.github.clans.fab.FloatingActionButton
-        android:id="@+id/his_up_button"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_gravity="left|bottom"
-        android:src="@android:drawable/star_big_off" />
-    <com.github.clans.fab.FloatingActionButton
-        android:id="@+id/his_down_button"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_gravity="left|bottom"
-        android:src="@android:drawable/star_big_on"
-        android:visibility="gone" />
 
-</FrameLayout>
+
+
+</RelativeLayout>

@@ -1,9 +1,15 @@
 package dataController;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Color;
+import android.os.Looper;
 import android.provider.ContactsContract;
 import android.provider.Settings;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.loopj.android.http.JsonHttpResponseHandler;
@@ -12,9 +18,13 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
+
+import cn.pedant.SweetAlert.SweetAlertDialog;
 import cz.msebera.android.httpclient.Header;
 import http.AuthenticationJSONAsyncTask;
 import http.httpConnectInterface;
+import listPage.ListPage;
+import login.page.LoginActivity;
 import sqlite.sqliteDatabase;
 import sqlite.sqliteDatabaseContract;
 
@@ -27,10 +37,90 @@ public class ListDataController implements httpConnectInterface {
     private Context context;
     private String user;
     private static sqliteDatabase Database ;
-
+    private SharedPreferences settings;
+    public static String[] array ;
     public ListDataController(Context context){
         this.context = context;
     }
+
+
+
+
+    public void setRemind(String item,String action){
+        req.put("remindItem",item);
+        req.put("action",action);
+        AuthenticationJSONAsyncTask.get("/dataRouter/setRemind", req, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                super.onSuccess(statusCode, headers, response);
+                try {
+                    if (response.getInt("result") == 1)
+                        Log.v("setRemind", "succeed");
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                getRemind();
+            }
+        });
+
+    }
+    public void getRemind(){
+        req.put("user",user);
+
+        AuthenticationJSONAsyncTask.get("/dataRouter/GetRemind", req, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
+                super.onSuccess(statusCode, headers, response);
+                try {
+                    String a[] = new String[response.length()];
+                    for (int i = 0; i < response.length(); i++)
+                        a[i] = response.getString(i);
+                    array = a;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                LocalBroadcastManager broadcaster = LocalBroadcastManager.getInstance(context);
+                Intent in = new Intent("gg");
+                in.putExtra("remind", "ok");
+                broadcaster.sendBroadcast(in);
+            }
+        });
+
+    }
+    public void CheckRain(){
+        AuthenticationJSONAsyncTask.get("/dataRouter/getWeather", req, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                try {
+                    if (response.getInt("rain") == 1){
+                        Log.d("Check","succeed");
+                    }
+                }catch (JSONException e){
+                    e.printStackTrace();
+                }
+
+                super.onSuccess(statusCode, headers, response);
+            }
+        });
+    }
+    public void CheckPM(){
+        AuthenticationJSONAsyncTask.get("/dataRouter/getPM", req, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                try {
+                    if (response.getInt("rain") == 1){
+                        Log.d("Check","succeed");
+                    }
+                }catch (JSONException e){
+                    e.printStackTrace();
+                }
+
+                super.onSuccess(statusCode, headers, response);
+            }
+        });
+    }
+
+
 
     /**
      *     Initial user tag, sensor data after login
@@ -45,25 +135,48 @@ public class ListDataController implements httpConnectInterface {
         requestHistory();
 
         AuthenticationJSONAsyncTask.get(SQLITE_INIT, req, new JsonHttpResponseHandler() {
-              @Override
-              public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                  super.onSuccess(statusCode, headers, response);
-                  Database.DataBaseInit(response);
-              }
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                //new Thread(runnable).interrupt();
+                Database.DataBaseInit(response);
+                super.onSuccess(statusCode, headers, response);
+            }
+        });
+    }
+    public void sendToken(String token){
+        req.put("token",token);
+        AuthenticationJSONAsyncTask.get("/dataRouter/test", req, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                super.onSuccess(statusCode, headers, response);
+                //Database.DataBaseInit(response);
+            }
 
 
         });
     }
+    public void Update(){
 
-    public void  requestSensorTagRelation(){
+        req.put("user",user);
+        AuthenticationJSONAsyncTask.get(SQLITE_INIT, req, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                Database.DataBaseInit(response);
+                super.onSuccess(statusCode, headers, response);
+            }
+
+
+        });
+    }
+    public void requestSensorTagRelation(){
 
         req.put("user",user);
         AuthenticationJSONAsyncTask.get(SQLITE_SEN_TAG_REL, req, new JsonHttpResponseHandler() {
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
-                super.onSuccess(statusCode, headers, response);
                 Database.InsertSensorTagRelation(response);
+                super.onSuccess(statusCode, headers, response);
             }
         });
     }
@@ -74,9 +187,8 @@ public class ListDataController implements httpConnectInterface {
 
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONArray response) {
-                super.onSuccess(statusCode, headers, response);
                 Database.InsertHistory(response);
-
+                super.onSuccess(statusCode, headers, response);
             }
         });
     }

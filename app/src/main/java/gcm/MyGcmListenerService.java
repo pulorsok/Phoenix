@@ -16,43 +16,41 @@
 
 package gcm;
 
-import android.app.Activity;
-import android.app.KeyguardManager;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.PixelFormat;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
-import android.support.annotation.UiThread;
 import android.support.v4.app.NotificationCompat;
-import android.support.v7.app.AlertDialog;
-import android.test.UiThreadTest;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-
 import com.google.android.gms.gcm.GcmListenerService;
 
-import cn.pedant.SweetAlert.SweetAlertDialog;
+
+import org.json.JSONArray;
+
 import listPage.ListPage;
 import main.phoenix.R;
 
 public class MyGcmListenerService extends GcmListenerService {
-    Handler mHandler;
-    private ListPage a;
+    LocalBroadcastManager broadcaster ;
+    static final public String COPA_RESULT = "gg";
+    static final public String COPA_MESSAGE = "gcm.MyGcmListenerService.COPA_MSG";
+
+
     private static final String TAG = "MyGcmListenerService";
-    int notifyID = 1; // 通知的識別號碼
-    NotificationManager notificationManager;
-    Notification notification ;
+
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        broadcaster = LocalBroadcastManager.getInstance(getBaseContext());
+    }
+
     /**
      * Called when message is received.
      *
@@ -60,12 +58,18 @@ public class MyGcmListenerService extends GcmListenerService {
      * @param data Data bundle containing message data as key/value pairs.
      *             For Set of keys use data.keySet().
      */
+
     // [START receive_message]
     @Override
     public void onMessageReceived(String from, Bundle data) {
+        String item = "";
         String message = data.getString("message");
+        if(data.getString("item") != null)
+            item = data.getString("item").substring(1,data.getString("item").length()-1);
+
         Log.d(TAG, "From: " + from);
         Log.d(TAG, "Message: " + message);
+        Log.d(TAG, "ITEM2: " + item);
 
         if (from.startsWith("/topics/")) {
             // message received from some topic.
@@ -73,6 +77,61 @@ public class MyGcmListenerService extends GcmListenerService {
             // normal downstream message.
         }
 
+        Intent intent = new Intent(this, ListPage.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
+                PendingIntent.FLAG_ONE_SHOT);
+
+
+        Uri defaultSoundUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.pundo);
+        Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_edit)
+                .setContentTitle("pundo message")
+                .setContentText(message)
+                .setVibrate(new long[] { 1000, 1000, 1000, 1000, 1000 })
+                .setOngoing(false)
+                .setDefaults(Notification.FLAG_INSISTENT)
+                .setFullScreenIntent(pendingIntent,true)
+                .setSound(defaultSoundUri, RingtoneManager.TYPE_RINGTONE)
+                .setContentIntent(pendingIntent);
+
+        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+
+
+        if(!ListPage.mIsPause){
+            Intent in = new Intent(COPA_RESULT);
+            if(message != null) {
+                if(message.equals("forget")) {
+                    in.putExtra(COPA_MESSAGE, message);
+                    in.putExtra("item", item);
+                }else {
+                    in.putExtra(COPA_MESSAGE, message);
+                }
+
+            }
+            broadcaster.sendBroadcast(in);
+        }else{
+            switch (message) {
+                case "pm":
+                    ListPage.hasToShowDialogPM = true;
+                    break;
+                case "noPm":
+                    ListPage.hasToShowDialogNoPM = true;
+                    break;
+                case "rain":
+                    ListPage.hasToShowDialogRain = true;
+                    break;
+                case "noRain":
+                    ListPage.hasToShowDialogNoRain = true;
+                    break;
+                case "forget":
+                    ListPage.hasToSHowDialogForgot = true;
+                    break;
+            }
+        }
         // [START_EXCLUDE]
         /**
          * Production applications would usually process the message here.
@@ -96,16 +155,6 @@ public class MyGcmListenerService extends GcmListenerService {
      * @param message GCM message received.
      */
     private void sendNotification(String message) {
-        Intent intent = new Intent(this, ListPage.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                PendingIntent.FLAG_ONE_SHOT);
-
-        //final int notifyID = 1; // 通知的識別號碼
-        Uri defaultSoundUri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.pundo);
-//        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
-//        notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(defaultSoundUri).build(); // 建立通知
-//        notification.defaults=Notification.DEFAULT_ALL;
 
 
 
@@ -113,32 +162,6 @@ public class MyGcmListenerService extends GcmListenerService {
 
 
 
-                        //notificationManager.notify(notifyID, notification); // 發送通知
-
-
-        new SweetAlertDialog(getBaseContext(), SweetAlertDialog.WARNING_TYPE)
-                            .setTitleText("Warning")
-                            .setContentText("You have missed your personal belongings")
-                            .setConfirmText("OK")
-                            .show();
-                    notificationManager.notify(notifyID, notification); // 發送通知
-
-
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_edit)
-                .setContentTitle("pundo message")
-                .setContentText(message)
-                .setVibrate(new long[] { 1000, 1000, 1000, 1000, 1000 })
-                .setAutoCancel(true)
-                .setSound(defaultSoundUri)
-                .setContentIntent(pendingIntent);
-
-
-
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
     }
 
 }

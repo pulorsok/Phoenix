@@ -2,15 +2,14 @@ package listPage;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
-import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ShapeDrawable;
 import android.graphics.drawable.shapes.OvalShape;
@@ -42,15 +41,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.webkit.WebView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.afollestad.materialdialogs.color.ColorChooserDialog;
@@ -65,9 +61,11 @@ import com.race604.flyrefresh.FlyRefreshLayout;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
-
+import cn.pedant.SweetAlert.SweetAlertDialog;
+import gcm.MyGcmListenerService;
 import gcm.QuickstartPreferences;
 import gcm.RegistrationIntentService;
 import dataController.ListDataController;
@@ -81,11 +79,12 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     private BroadcastReceiver mRegistrationBroadcastReceiver;
 
     private boolean isReceiverRegistered;
-    private static String sensorPage = "all";
+    private static String sensorPage = "ALL";
 
     private static final int[] ITEM_DRAWABLES = { R.drawable.composer_camera, R.drawable.composer_music,
             R.drawable.composer_place, R.drawable.composer_sleep, R.drawable.composer_thought, R.drawable.composer_with };
 
+    private BroadcastReceiver receiver;
 
     /**
      * View parameter
@@ -95,7 +94,8 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     private RecyclerView mListView;
     private FloatingActionButton hisUp; // history page up
     private FloatingActionButton hisDown; // history page down
-
+    private FloatingActionButton PMcheck;
+    private FloatingActionButton Raincheck;
     /**
      * View Controller
      */
@@ -116,9 +116,6 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     NotificationManager notificationManager;
     Notification notification ;
 
-
-    private Context context = ListPage.this;
-    public static Boolean alertCheck = false;
     private DrawerLayout mDrawerLayout;
 
     private WebView mWebview ;
@@ -126,21 +123,84 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     private FragmentManager fgm = getSupportFragmentManager();
     private Fragment history = new HistoryListPage();
 
+    private String ForgotMessage;
+    private boolean DialogCheck = true;
+    public static boolean hasToShowDialogPM = false;
+    public static boolean hasToShowDialogRain = false;
+    public static boolean hasToShowDialogNoPM = false;
+    public static boolean hasToShowDialogNoRain = false;
+    public static boolean hasToSHowDialogForgot = false;
+    public static boolean mIsPause = false;
+
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.list_page_main);
 
 
+        // the BroadCast form GCM
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if(DialogCheck) {
+                    String s = intent.getStringExtra(MyGcmListenerService.COPA_MESSAGE);
+                    if(s != null)
+                        switch (s){
+                            case "pm":
+                                ShowPM25SweetDialog();
+                                DialogCheck = false;
+                                break;
+                            case "rain":
+                                ShowRainSweetDialog();
+                                DialogCheck = false;
+                                break;
+                            case "noPm":
+                                ShowNoPM25SweetDialog();
+                                DialogCheck = false;
+                                break;
+                            case "noRain":
+                                ShowNoRainSweetDialog();
+                                DialogCheck = false;
+                                break;
+                            case "forget":
+                                ShowForgotSweetDialog(intent.getStringExtra("item"));
+                                ForgotMessage = intent.getStringExtra("item");
+                                DialogCheck = false;
+                                break;
+                        }
 
+                    String c = intent.getStringExtra("remind");
+                    Log.i("BroadCaster", "c = " + c);
+                    Log.i("BroadCaster", "s = " + s);
+                    if(c.equals("ok") && c!=null)
+                        updateDataSet();
+//                    if (intent.getStringExtra(MyGcmListenerService.COPA_MESSAGE).equals("pm")) {
+//                        ShowPM25SweetDialog();
+//                        DialogCheck = false;
+//                    } else if (intent.getStringExtra(MyGcmListenerService.COPA_MESSAGE).equals("rain")) {
+//                        ShowRainSweetDialog();
+//                        DialogCheck = false;
+//                    } else if (intent.getStringExtra(MyGcmListenerService.COPA_MESSAGE).equals("forget")) {
+//                        ShowForgotSweetDialog(intent.getStringExtra("item"));
+//                        ForgotMessage = intent.getStringExtra("item");
+//                        DialogCheck = false;
+//                    }
+                }
+            }
+        };
+        final SweetAlertDialog pDialog = new SweetAlertDialog(this, SweetAlertDialog.PROGRESS_TYPE);
+        pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
+        pDialog.setTitleText("Loading");
+        pDialog.setCancelable(false);
+        pDialog.show();
 
 
 
         // Alert Notification
-        soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION); // 通知音效的URI，在這裡使用系統內建的通知音效
-        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
-        notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(soundUri).build(); // 建立通知
-        notification.defaults=Notification.DEFAULT_ALL;
+//        soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION); // 通知音效的URI，在這裡使用系統內建的通知音效
+//        notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE); // 取得系統的通知服務
+//        notification = new Notification.Builder(getApplicationContext()).setSmallIcon(R.drawable.ic_launcher).setContentTitle("內容標題").setContentText("內容文字").setSound(soundUri).build(); // 建立通知
+//        notification.defaults=Notification.DEFAULT_ALL;
 
 
 
@@ -151,7 +211,17 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         toolbar.setTitle(sensorPage);
 
         // sensor and tag data
-        initDataSet();
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                //Do something after 100ms
+                initDataSet();
+                pDialog.dismissWithAnimation();
+            }
+        }, 2000);
+        //initDataSet();
 
 
         // Drawer Menu Button init
@@ -202,8 +272,24 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 
 
 
-        final Activity activity = this;
+
         mWebview  = new WebView(this);
+        PMcheck = (FloatingActionButton)findViewById(R.id.pm_btn);
+        PMcheck.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dbController.CheckPM();
+            }
+
+        });
+        Raincheck = (FloatingActionButton)findViewById(R.id.rain_btn);
+        Raincheck.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dbController.CheckRain();
+            }
+
+        });
         hisUp = (FloatingActionButton)findViewById(R.id.his_up_button);
         hisDown = (FloatingActionButton)findViewById(R.id.his_down_button);
         hisUp.setOnClickListener(new View.OnClickListener() {
@@ -237,6 +323,8 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
                 }
             });
         }
+
+
 
         // Registering BroadcastReceiver
         mRegistrationBroadcastReceiver = new BroadcastReceiver() {
@@ -273,7 +361,22 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
     @Override
     protected void onResume() {
         super.onResume();
+        Log.v("ListPage Life","onResume");
+
         registerReceiver();
+        mIsPause = false;
+        if(hasToShowDialogPM){
+            ShowPM25SweetDialog();
+            hasToShowDialogPM = false;
+        }
+        if(hasToShowDialogRain){
+            ShowRainSweetDialog();
+            hasToShowDialogRain = false;
+        }
+        if(hasToSHowDialogForgot){
+            ShowForgotSweetDialog(ForgotMessage);
+            hasToSHowDialogForgot = false;
+        }
 
     }
     @Override
@@ -285,18 +388,158 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         return super.onKeyDown(keyCode, event);
     }
     @Override
-    protected void onPause() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRegistrationBroadcastReceiver);
-        isReceiverRegistered = false;
-        super.onPause();
+    protected void onStart() {
+        super.onStart();
+        Log.v("ListPage Life","onStart");
+        LocalBroadcastManager.getInstance(this).registerReceiver((receiver),
+                new IntentFilter(MyGcmListenerService.COPA_RESULT)
+        );
     }
 
+    @Override
+    protected void onStop() {
+        Log.v("ListPage Life","onStop");
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver);
+        super.onStop();
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.v("ListPage Life","onPause");
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRegistrationBroadcastReceiver);
+        isReceiverRegistered = false;
+        mIsPause = true;
+
+    }
+    private void ShowPM25SweetDialog(){
+        new SweetAlertDialog(ListPage.this, SweetAlertDialog.CUSTOM_IMAGE_TYPE)
+                .setTitleText("")
+                .setContentText("The Particulate Matter(PM2.5) has exceeded  the standard.\n" +
+                        "Please wearing masks.")
+                .setConfirmText("Remind me")
+                .setCancelText("Cancel")
+                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCustomImage(R.drawable.pm)
+                .show();
+    }
+    private void ShowNoPM25SweetDialog(){
+        new SweetAlertDialog(ListPage.this, SweetAlertDialog.CUSTOM_IMAGE_TYPE)
+                .setTitleText("")
+                .setContentText("The Pm25 is available")
+                .setConfirmText("OK")
+                .setCancelText("Cancel")
+                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCustomImage(R.drawable.pm)
+                .show();
+    }
+    private void ShowForgotSweetDialog(String forgotItem){
+        new SweetAlertDialog(ListPage.this, SweetAlertDialog.NORMAL_TYPE)
+                .setTitleText("")
+                .setContentText("You have missed your " + forgotItem)
+                .setConfirmText("OK")
+                .setCancelText("Cancel")
+                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .show();
+    }
+    private void ShowRainSweetDialog(){
+        new SweetAlertDialog(ListPage.this, SweetAlertDialog.CUSTOM_IMAGE_TYPE)
+                .setTitleText("")
+                .setContentText("The probability of precipitation \nhas exceeded the standard." +
+                                    "Suggest user  bringing the umbrella.")
+                .setConfirmText("Remind me")
+                .setCancelText("Cancel")
+                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCustomImage(R.drawable.rain)
+                .show();
+    }
+    private void ShowNoRainSweetDialog(){
+        new SweetAlertDialog(ListPage.this, SweetAlertDialog.CUSTOM_IMAGE_TYPE)
+                .setTitleText("")
+                .setContentText("no rain.")
+                .setConfirmText("OK")
+                .setCancelText("Cancel")
+                .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        sweetAlertDialog.dismissWithAnimation();
+                        DialogCheck = true;
+                    }
+                })
+                .setCustomImage(R.drawable.rain)
+                .show();
+    }
     private void registerReceiver(){
         if(!isReceiverRegistered) {
             LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
                     new IntentFilter(QuickstartPreferences.REGISTRATION_COMPLETE));
             isReceiverRegistered = true;
         }
+    }
+    public void dialog(){
+
+
+
+
+
     }
     /**
      * Check the device to make sure it has the Google Play Services APK. If
@@ -340,15 +583,16 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 //        mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, "Note Book", new Date(2014 - 1900, 1, 3)));
 //        mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_folder_white_24dp, "wallet", new Date(2014 - 1900, 0, 9)));
 //
-
-        String[] alltags = dbController.getSqliteSelect(sqliteDatabaseContract.USER_TAG.TABLE,sqliteDatabaseContract.USER_TAG.TAG);
-        for(String s: alltags){
-            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_smartphone_white_24dp, s,new Date()));
-        }
+        updateDataSet();
+//        String[] alltags = dbController.getSqliteSelect(sqliteDatabaseContract.USER_TAG.TABLE,sqliteDatabaseContract.USER_TAG.TAG);
+//        for(String s: alltags){
+//            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_smartphone_white_24dp, s,new Date()));
+//        }
     }
     private void updateDataSet(){
         //String conditionQuery = sqliteDatabaseContract.SENSOR_TAG.SENSOR + " = " + "'" + sensorPage + "'";
         //mDataSet.clear();
+
         String[] sensorTags = null;
 
         
@@ -365,8 +609,16 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         }
 
         mDataSet.clear();
+        String[] remind = ListDataController.array;
         for(String s: sensorTags){
-            mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_smartphone_white_24dp, s,new Date()));
+            if (Arrays.asList(remind).contains(s)) {
+                mDataSet.add(new ItemData(Color.YELLOW, R.mipmap.ic_smartphone_white_24dp, s,new Date()));
+                // is valid
+            } else {
+                mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_smartphone_white_24dp, s,new Date()));
+                // not valid
+            }
+           // mDataSet.add(new ItemData(Color.GRAY, R.mipmap.ic_smartphone_white_24dp, s,new Date()));
         }
         mListView.removeAllViews();
         mAdapter = new ItemAdapter(this);
@@ -423,6 +675,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
 
     @Override
     public void onRefresh(FlyRefreshLayout view) {
+        dbController.Update();
         View child = mListView.getChildAt(0);
         if (child != null) {
             bounceAnimateView(child.findViewById(R.id.icon));
@@ -458,10 +711,10 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
         this.accentPreselect=accentPreselect;
         this.primaryPreselect=primaryPreselect;
     }
+
     @Override
     public void onRefreshAnimationEnd(FlyRefreshLayout view) {
         updateDataSet();
-
     }
 
     /**
@@ -548,31 +801,32 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
             itemViewHolder.infoButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    new MaterialDialog.Builder(ListPage.this)
-                            .title(R.string.item_list_edit)
-                            .content(R.string.item_list_edit_content)
-                            .inputType(InputType.TYPE_CLASS_TEXT |
-                                    InputType.TYPE_TEXT_VARIATION_PERSON_NAME |
-                                    InputType.TYPE_TEXT_FLAG_CAP_WORDS)
-                            .inputRange(2, 16)
-                            .positiveText(R.string.submit)
-                            .input(R.string.item_list_edit_input_hint, 0, false, new MaterialDialog.InputCallback() {
+                    final String action = (data.color == Color.YELLOW) ? "del" : "add";
+                    new SweetAlertDialog(ListPage.this, SweetAlertDialog.WARNING_TYPE)
+                            .setTitleText("")
+                            .setContentText("You sure you want to " + action + " this item?")
+                            .setConfirmText("YES")
+                            .setCancelText("NO")
+                            .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
                                 @Override
-                                public void onInput(@NonNull MaterialDialog dialog, CharSequence input) {
-                                    /**
-                                     *      Warn, if string has been created
-                                     * */
-                                    if (input.toString().equalsIgnoreCase("hello")) {
-                                        dialog.setContent("It has a same name that already created");
-                                        dialog.getActionButton(DialogAction.POSITIVE).setEnabled(false);
-                                    } else {
-                                        dialog.setContent(R.string.item_list_edit_content);
-                                        dialog.getActionButton(DialogAction.POSITIVE).setEnabled(true);
-                                        itemViewHolder.title.setText(input.toString());
-                                        Toast.makeText(ListPage.this, "Edited successfully", Toast.LENGTH_SHORT).show();
-                                    }
+                                public void onClick(SweetAlertDialog sweetAlertDialog) {
+                                    sweetAlertDialog.dismissWithAnimation();
+                                    Log.d("datatitle",data.title);
+                                    dbController.setRemind(data.title,action);
                                 }
-                            }).show();
+                            })
+                            .setCancelClickListener(new SweetAlertDialog.OnSweetClickListener() {
+                                @Override
+                                public void onClick(SweetAlertDialog sweetAlertDialog) {
+                                    sweetAlertDialog.dismissWithAnimation();
+                                    DialogCheck = true;
+                                }
+                            })
+                            .show();
+
+
+
+//
                 }
             });
 

@@ -48,6 +48,8 @@
 
         <!--<activity android:name="login.page.LoginActivity" android:theme="@style/AppTheme.Dark" />-->
         <activity android:name="login.page.SignupActivity" android:theme="@style/AppTheme.Dark" />
+
+
         <!-- [START gcm_receiver] -->
         <receiver
             android:name="com.google.android.gms.gcm.GcmReceiver"
@@ -58,8 +60,9 @@
                 <category android:name="gcm.play.android.samples.com.gcmquickstart" />
             </intent-filter>
         </receiver>
-        <!-- [END gcm_receiver] -->
 
+        <!-- [END gcm_receiver] -->
+       <activity android:name="listPage.MessageBox" android:theme="@style/Theme.Transparent"></activity>
         <!-- [START gcm_listener] -->
         <service
             android:name="gcm.MyGcmListenerService"

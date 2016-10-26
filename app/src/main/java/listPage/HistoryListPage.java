@@ -28,6 +28,7 @@ import android.widget.TextView;
 
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -70,13 +71,23 @@ public class HistoryListPage extends Fragment {
         if(c.getCount()!=0) {
             c.moveToFirst();
             for (int i = 0; i < c.getCount(); i++) {
-                Log.v("History", c.getString(c.getColumnIndex(sqliteDatabaseContract.HISTORY.TAG)));
-                mDataSet.add(new HistoryItemData(
-                        R.mipmap.ic_folder_white_24dp, //image
-                        c.getString(c.getColumnIndex(sqliteDatabaseContract.HISTORY.TAG)), // title
-                        new Date(2016-1900,8,25,9,24,22), //time
-                        c.getInt(c.getColumnIndex(sqliteDatabaseContract.HISTORY.LOCATION)) == 1) // location
-                );
+                Log.v("HistoryDate", c.getString(c.getColumnIndex(sqliteDatabaseContract.HISTORY.DATE)));
+                String dtStart = c.getString(c.getColumnIndex(sqliteDatabaseContract.HISTORY.DATE)); //time
+                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+                try {
+                    Date date = format.parse(dtStart);
+
+                    mDataSet.add(new HistoryItemData(
+                            R.mipmap.ic_folder_white_24dp, //image
+                            c.getString(c.getColumnIndex(sqliteDatabaseContract.HISTORY.TAG)), // title
+                            date,
+                            c.getInt(c.getColumnIndex(sqliteDatabaseContract.HISTORY.LOCATION)) == 1) // location
+                    );
+                } catch (ParseException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
 
                 c.moveToNext();
             }
@@ -89,6 +100,7 @@ public class HistoryListPage extends Fragment {
         mListView = (RecyclerView) View.findViewById(R.id.history_list);
         mListView.setLayoutManager(mLayoutManager);
         mAdapter = new ItemAdapter(getContext());
+        mAdapter.notifyDataSetChanged();
         mListView.setAdapter(mAdapter);
         mListView.setItemAnimator(new SampleItemAnimator());
         return View;
