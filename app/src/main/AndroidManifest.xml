@@ -72,6 +72,7 @@
             </intent-filter>
         </service>
         <!-- [END gcm_listener] -->
+
         <!-- [START instanceId_listener] -->
         <service
             android:name="gcm.MyInstanceIDListenerService"

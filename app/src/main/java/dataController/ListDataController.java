@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 import cz.msebera.android.httpclient.Header;
+import gcm.MyGcmListenerService;
 import http.AuthenticationJSONAsyncTask;
 import http.httpConnectInterface;
 import listPage.ListPage;
@@ -94,6 +95,15 @@ public class ListDataController implements httpConnectInterface {
                 try {
                     if (response.getInt("rain") == 1){
                         Log.d("Check","succeed");
+                        LocalBroadcastManager broadcaster = LocalBroadcastManager.getInstance(context);
+                        Intent in = new Intent("gg");
+                        in.putExtra(MyGcmListenerService.COPA_MESSAGE, "rain");
+                        broadcaster.sendBroadcast(in);
+                    }else{
+                        LocalBroadcastManager broadcaster = LocalBroadcastManager.getInstance(context);
+                        Intent in = new Intent("gg");
+                        in.putExtra(MyGcmListenerService.COPA_MESSAGE, "noRain");
+                        broadcaster.sendBroadcast(in);
                     }
                 }catch (JSONException e){
                     e.printStackTrace();
@@ -110,6 +120,16 @@ public class ListDataController implements httpConnectInterface {
                 try {
                     if (response.getInt("rain") == 1){
                         Log.d("Check","succeed");
+                        LocalBroadcastManager broadcaster = LocalBroadcastManager.getInstance(context);
+                        Intent in = new Intent("gg");
+                        in.putExtra(MyGcmListenerService.COPA_MESSAGE, "pm");
+                        broadcaster.sendBroadcast(in);
+                    }else{
+                        Log.d("Check","succeed");
+                        LocalBroadcastManager broadcaster = LocalBroadcastManager.getInstance(context);
+                        Intent in = new Intent("gg");
+                        in.putExtra(MyGcmListenerService.COPA_MESSAGE, "noPm");
+                        broadcaster.sendBroadcast(in);
                     }
                 }catch (JSONException e){
                     e.printStackTrace();

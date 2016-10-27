@@ -172,19 +172,9 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
                     String c = intent.getStringExtra("remind");
                     Log.i("BroadCaster", "c = " + c);
                     Log.i("BroadCaster", "s = " + s);
-                    if(c.equals("ok") && c!=null)
-                        updateDataSet();
-//                    if (intent.getStringExtra(MyGcmListenerService.COPA_MESSAGE).equals("pm")) {
-//                        ShowPM25SweetDialog();
-//                        DialogCheck = false;
-//                    } else if (intent.getStringExtra(MyGcmListenerService.COPA_MESSAGE).equals("rain")) {
-//                        ShowRainSweetDialog();
-//                        DialogCheck = false;
-//                    } else if (intent.getStringExtra(MyGcmListenerService.COPA_MESSAGE).equals("forget")) {
-//                        ShowForgotSweetDialog(intent.getStringExtra("item"));
-//                        ForgotMessage = intent.getStringExtra("item");
-//                        DialogCheck = false;
-//                    }
+                    if(c!=null)
+                        if(c.equals("ok"))
+                            updateDataSet();
                 }
             }
         };
@@ -421,6 +411,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
                 .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
                     @Override
                     public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        dbController.setRemind("口罩","add");
                         sweetAlertDialog.dismissWithAnimation();
                         DialogCheck = true;
                     }
@@ -490,6 +481,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
                 .setConfirmClickListener(new SweetAlertDialog.OnSweetClickListener() {
                     @Override
                     public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        dbController.setRemind("雨傘","add");
                         sweetAlertDialog.dismissWithAnimation();
                         DialogCheck = true;
                     }
@@ -527,6 +519,7 @@ public class ListPage extends AppCompatActivity implements FlyRefreshLayout.OnPu
                 .setCustomImage(R.drawable.rain)
                 .show();
     }
+
     private void registerReceiver(){
         if(!isReceiverRegistered) {
             LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,

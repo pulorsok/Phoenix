@@ -4,7 +4,8 @@ package http;
  *   Http connect parameter
  */
 public interface httpConnectInterface {
-    String BASE_URL= "http://163.18.44.131:3000";
+    //String BASE_URL= "http://163.18.44.131:3000";
+    String BASE_URL= "http://203.64.101.187:3000";
     String GET_SENSOR = "/dataRouter/get.Sensor-User";
     String GET_TAG = "/dataRouter/get.Tag-User";
     String GET_USER = "/dataRouter/get.user";
